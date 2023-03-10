@@ -17,9 +17,6 @@ type ResponseData struct {
 	Result    float64 `json:"result"`
 }
 
-var data Data
-var responseData ResponseData
-
 func errorHandling(w http.ResponseWriter, err error) {
 	fmt.Println(err)
 	http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -33,25 +30,32 @@ func main() {
 
 func handleCalculator(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
+		var data []Data
+		var responseData []ResponseData
+
 		if err := json.NewDecoder(r.Body).Decode(&data); err != nil { // Decoding the request data
 			errorHandling(w, err)
 			http.Error(w, "Error decoding data", http.StatusBadRequest)
 			return
 		}
-		responseData.Operation = data.Operation
 
-		switch data.Operation {
-		case "sum":
-			responseData.Result = calculateAdd(data)
-		case "subtract":
-			responseData.Result = calculateSubtract(data)
-		case "multiplication":
-			responseData.Result = calculateMultiplication(data)
-		case "division":
-			responseData.Result = calculateDivision(data)
-		default:
-			http.Error(w, "Invalid operation", http.StatusBadRequest)
-			return
+		for _, d := range data {
+			var rd ResponseData
+			rd.Operation = d.Operation
+			switch d.Operation {
+			case "sum":
+				rd.Result = calculateAdd(d)
+			case "subtract":
+				rd.Result = calculateSubtract(d)
+			case "multiplication":
+				rd.Result = calculateMultiplication(d)
+			case "division":
+				rd.Result = calculateDivision(d)
+			default:
+				http.Error(w, "Invalid operation", http.StatusBadRequest)
+				return
+			}
+			responseData = append(responseData, rd)
 		}
 		json.NewEncoder(w).Encode(responseData)
 	}
